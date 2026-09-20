@@ -60,6 +60,12 @@ class Boletos extends Migration
 				'type' => 'TEXT'
 			],
 
+			'id_empresa' => [
+				'type'       => 'INT',
+				'constraint' => 11,
+				'default'    => 0,
+			],
+
 			'created_at' => [
 				'type' => 'DATETIME'
 			],

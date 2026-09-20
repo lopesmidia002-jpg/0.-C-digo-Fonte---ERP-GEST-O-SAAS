@@ -27,35 +27,55 @@ class ImpressaoDANFe extends Controller
         $this->nfe_model = new NFeModel();
         $this->nfce_model = new NFCeModel();
 
-        // Carrega o pacote Sped-Da
-        require_once APPPATH . "ThirdParty/sped-da/vendor/autoload.php";
+        // Carrega o pacote Sped-Da caso esteja na pasta ThirdParty ou via Composer global
+        if (file_exists(APPPATH . "ThirdParty/sped-da/vendor/autoload.php")) {
+            require_once APPPATH . "ThirdParty/sped-da/vendor/autoload.php";
+        } elseif (file_exists(ROOTPATH . "vendor/autoload.php")) {
+            require_once ROOTPATH . "vendor/autoload.php";
+        }
     }
 
     public function imprimir($tipo, $id)
     {
+        if (!class_exists('NFePHP\DA\NFe\Danfe')) {
+            $this->session->setFlashdata('alert', [
+                'type'  => 'error',
+                'title' => 'Biblioteca Sped-DA não encontrada. Execute `composer install` para instalar as dependências de impressão.',
+            ]);
+
+            return redirect()->to('/inicio');
+        }
+
         if($tipo == 1) :
 
-            $xml = $this->nfe_model
+            $registro = $this->nfe_model
                         ->where('id_empresa', $this->id_empresa)
                         ->where('id_nfe', $id)
                         ->select('xml')
-                        ->first()['xml'];
+                        ->first();
         else:
 
-            $xml = $this->nfce_model
+            $registro = $this->nfce_model
                         ->where('id_empresa', $this->id_empresa)
                         ->where('id_nfce', $id)
                         ->select('xml')
-                        ->first()['xml'];
+                        ->first();
 
         endif;
 
-        // $logo = 'data://text/plain;base64,'. base64_encode(file_get_contents(realpath(__DIR__ . '/../images/tulipas.png')));
-        //$logo = realpath(__DIR__ . '/../images/tulipas.png');
+        if (empty($registro) || empty($registro['xml'])) {
+            $this->session->setFlashdata('alert', [
+                'type'  => 'error',
+                'title' => 'XML da nota não encontrado ou inválido.',
+            ]);
+
+            return redirect()->to('/inicio');
+        }
+
+        $xml = $registro['xml'];
+        $logo = null;
 
         try {
-            $this->response->setHeader('Content-Type', 'application/pdf');
-
             if($tipo == 1) :
                 $danfe = new Danfe($xml);
             else:
@@ -64,18 +84,21 @@ class ImpressaoDANFe extends Controller
 
             $danfe->debugMode(false);
             $danfe->creditsIntegratorFooter('WEBNFe Sistemas - http://www.webenf.com.br');
-            // Caso queira mudar a configuracao padrao de impressao
-            /*  $this->printParameters( $orientacao = '', $papel = 'A4', $margSup = 2, $margEsq = 2 ); */
-            //Informe o numero DPEC
-            /*  $danfe->depecNumber('123456789'); */
-            //Configura a posicao da logo
-            /*  $danfe->logoParameters($logo, 'C', false);  */
-            //Gera o PDF
+            
             $pdf = $danfe->render($logo);
-            // header('Content-Type: application/pdf');
-            echo $pdf;
-        } catch (InvalidArgumentException $e) {
-            echo "Ocorreu um erro durante o processamento :" . $e->getMessage();
+
+            return $this->response
+                ->setHeader('Content-Type', 'application/pdf')
+                ->setHeader('Content-Disposition', 'inline; filename="danfe_' . $id . '.pdf"')
+                ->setBody($pdf);
+
+        } catch (\Exception $e) {
+            $this->session->setFlashdata('alert', [
+                'type'  => 'error',
+                'title' => 'Erro ao processar DANFE: ' . $e->getMessage(),
+            ]);
+
+            return redirect()->to('/inicio');
         }  
     }
 }

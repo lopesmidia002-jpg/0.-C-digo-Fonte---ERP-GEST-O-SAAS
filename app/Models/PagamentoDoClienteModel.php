@@ -16,6 +16,7 @@ class PagamentoDoClienteModel extends Model
         'hora',
         'observacoes',
         'id_cliente',
+        'id_empresa',
     ];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';

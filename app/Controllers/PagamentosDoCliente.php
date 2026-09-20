@@ -3,25 +3,35 @@
 namespace App\Controllers;
 
 use App\Models\CaixaModel;
+use App\Models\ControleDeAcessoModel;
 use App\Models\PagamentoDoClienteModel;
 use CodeIgniter\Controller;
 
 class PagamentosDoCliente extends Controller
 {
     private $links;
+    private $session;
+    private $id_empresa;
+    private $id_login;
+    private $controle_de_acesso_model;
     private $pagamento_do_cliente_model;
     private $caixa_model;
 
     function __construct()
     {
+        $this->session = session();
+        $this->id_empresa = $this->session->get('id_empresa');
+        $this->id_login   = $this->session->get('id_login');
+
         $this->links = [
             'menu' => '5.m',
             'item' => '5.0',
             'subItem' => '5.2'
         ];
 
+        $this->controle_de_acesso_model   = new ControleDeAcessoModel();
         $this->pagamento_do_cliente_model = new PagamentoDoClienteModel();
-        $this->caixa_model = new CaixaModel();
+        $this->caixa_model                = new CaixaModel();
     }
 
     public function create($id_cliente)
@@ -29,7 +39,7 @@ class PagamentosDoCliente extends Controller
         $data['links'] = $this->links;
 
         $data['titulo'] = [
-            'modulo' => 'Novo Pagameto',
+            'modulo' => 'Novo Pagamento',
             'icone'  => 'fa fa-plus-circle'
         ];
 
@@ -62,7 +72,11 @@ class PagamentosDoCliente extends Controller
             ['titulo' => "Editar PGTO", 'rota'   => "", 'active' => true]
         ];
 
-        $data['pagamento']  = $this->pagamento_do_cliente_model->where('id_pagamento', $id_pagamento)->first();
+        $data['pagamento']  = $this->pagamento_do_cliente_model
+            ->where('id_empresa', $this->id_empresa)
+            ->where('id_pagamento', $id_pagamento)
+            ->first();
+            
         $data['id_cliente'] = $id_cliente;
 
         echo view('templates/header');
@@ -72,30 +86,34 @@ class PagamentosDoCliente extends Controller
 
     public function store()
     {
-        $dados = $this->request->getvar();
-        $this->pagamento_do_cliente_model->save($dados);
+        $dados = $this->request->getVar();
+        $dados['id_empresa'] = $this->id_empresa;
 
-        $session = session();
+        if (isset($dados['id_pagamento'])) {
+            $this->pagamento_do_cliente_model
+                ->where('id_empresa', $this->id_empresa)
+                ->where('id_pagamento', $dados['id_pagamento'])
+                ->set($dados)
+                ->update();
 
-        // Se o usuário estiver editando
-        if(isset($dados['id_pagamento']))
-        {
-            $session->setFlashdata('alert', 'success_edit_pagamento');
-
+            $this->session->setFlashdata('alert', 'success_edit_pagamento');
             return redirect()->to("/clientes/show/{$dados['id_cliente']}");
         }
 
-        $session->setFlashdata('alert', 'success_create_pagamento');
+        $this->pagamento_do_cliente_model->insert($dados);
+        $this->session->setFlashdata('alert', 'success_create_pagamento');
 
         return redirect()->to("/clientes/show/{$dados['id_cliente']}");
     }
 
     public function delete($id_pagamento, $id_cliente)
     {
-        $this->pagamento_do_cliente_model->where('id_pagamento', $id_pagamento)->delete();
+        $this->pagamento_do_cliente_model
+            ->where('id_empresa', $this->id_empresa)
+            ->where('id_pagamento', $id_pagamento)
+            ->delete();
 
-        $session = session();
-        $session->setFlashdata('alert', 'success_delete_pagamento');
+        $this->session->setFlashdata('alert', 'success_delete_pagamento');
 
         return redirect()->to("/clientes/show/$id_cliente");
     }

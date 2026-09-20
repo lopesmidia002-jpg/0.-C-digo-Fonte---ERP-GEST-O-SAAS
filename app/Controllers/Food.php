@@ -248,11 +248,11 @@ class Food extends Controller
             ->where('id_mesa', $dados['id_mesa'])
             ->update();
 
-        // Remove todos os produtos da tabela provisoria do pedido
+        // Remove todos os produtos da tabela provisoria do pedido daquela mesa
         $this->provisorio_produto_food_model
             ->where('id_empresa', $this->id_empresa)
+            ->where('id_mesa', $dados['id_mesa'])
             ->delete();
-            // ->emptyTable('provisorio_produtos_food');
 
         $this->session->setFlashdata(
             'alert',

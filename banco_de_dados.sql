@@ -6558,6 +6558,7 @@ CREATE TABLE `pagamentos_do_cliente` (
   `hora` time NOT NULL,
   `observacoes` varchar(512) NOT NULL,
   `id_cliente` int(11) NOT NULL,
+  `id_empresa` int(11) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   `deleted_at` datetime NOT NULL

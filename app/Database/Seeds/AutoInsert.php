@@ -16780,7 +16780,7 @@ class AutoInsert extends \CodeIgniter\Database\Seeder
 
         $this->db->table('login')->insert([
             'usuario'              => 'admin',
-            'senha'                => '123',
+            'senha'                => password_hash('123', PASSWORD_DEFAULT),
             'tipo'                 => 1,
             'esse_usuario_e_admin' => 0,
             'id_empresa'           => 0,

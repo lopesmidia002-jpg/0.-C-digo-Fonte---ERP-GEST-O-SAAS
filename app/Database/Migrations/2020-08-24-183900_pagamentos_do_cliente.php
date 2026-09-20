@@ -40,6 +40,12 @@ class PagamentosDoCliente extends Migration
 				'type' => 'INT'
 			],
 
+			'id_empresa' => [
+				'type'       => 'INT',
+				'constraint' => 11,
+				'default'    => 0,
+			],
+
 			'created_at' => [
 				'type' => 'DATETIME'
 			],
