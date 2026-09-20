@@ -1,0 +1,10 @@
+/*CSS para impressão*/
+@media print {
+    .print {
+        display:block;
+    }
+
+    .no-print { 
+        display:none; 
+    }
+}
